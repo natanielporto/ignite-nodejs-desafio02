@@ -10,19 +10,76 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  // receber o username do usuário pelo header
+  // validar se existe ou não um usuário com o username passado. 
+  // Caso exista, o usuário deve ser repassado para o request e a função next deve ser chamada.
+  
+  const {username} = request.headers;
+
+  const user = users.find(el => el.username === username);
+
+  if (!user) {
+    return response.status(404).json({error: "User does not exists."})
+  }
+
+  request.user = user;
+
+  return next();
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { user } = request;
+  const { pro, todos } = user;
+
+  const freeUser = !pro && todos.length <= 9;
+
+  if (freeUser || pro) {
+    return next();
+  }
+
+  if (!freeUser && !pro) {
+    return response.status(403).json({error: "You are not a pro user and exceded the 10th free todo."})
+  }
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
-}
+  const {username} = request.headers;
+  const { id } = request.params;
 
+  const user = users.find(el => el.username === username);
+
+  if (!user) {
+    return response.status(404).json({ error: "User not found." })
+  };
+
+  if (!validate(id)) {
+    return response.status(400).json({ error: "Provided ID is not a valid uuid." })
+  };
+
+  const todo = user.todos.find(el => el.id === id);
+
+  if (!todo) {
+    return response.status(404).json({ error: "Todo not found." })
+  };
+
+  request.user = user;
+  request.todo = todo;
+  
+  return next();
+  }
+  
 function findUserById(request, response, next) {
-  // Complete aqui
+  const {id} = request.params;
+
+  const user = users.find(el => el.id === id)
+
+  if (!user) {
+    return response.status(404).json({error: "Matching user id not found."})
+  }
+
+  request.user = user;
+
+  return next();
 }
 
 app.post('/users', (request, response) => {
